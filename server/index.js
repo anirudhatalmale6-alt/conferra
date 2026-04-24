@@ -31,6 +31,7 @@ fs.mkdirSync(LOGOS_PATH, { recursive: true });
 // Express app
 // ---------------------------------------------------------------------------
 const app = express();
+app.set('trust proxy', 1);
 const router = express.Router();
 
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
