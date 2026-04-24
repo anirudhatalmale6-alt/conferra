@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conferra - Protokoll for Styrelsemdten</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Org Modal -->
+  <div class="modal-overlay" id="orgModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="orgModalTitle">Ny Organisation</h3>
+        <button class="btn-ghost" onclick="closeModal('orgModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Namn *</label>
+          <input type="text" id="orgName" placeholder="Foreningsnamn eller foretag">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Org.nummer</label>
+            <input type="text" id="orgNumber" placeholder="XXXXXX-XXXX">
+          </div>
+          <div class="form-group">
+            <label>Typ</label>
+            <select id="orgType">
+              <option value="company">Foretag (AB)</option>
+              <option value="association">Forening</option>
+              <option value="nonprofit">Ideell forening</option>
+              <option value="hoa">Bostadsrattsforening</option>
+              <option value="other">Ovrigt</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Adress</label>
+          <input type="text" id="orgAddress" placeholder="Gatuadress">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Stad</label>
+            <input type="text" id="orgCity" placeholder="Stockholm">
+          </div>
+          <div class="form-group">
+            <label>Postnummer</label>
+            <input type="text" id="orgPostalCode" placeholder="123 45">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('orgModal')">Avbryt</button>
+        <button class="btn btn-primary" id="orgSaveBtn" onclick="saveOrg()">Spara</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Member Modal -->
+  <div class="modal-overlay" id="memberModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="memberModalTitle">Lagg till medlem</h3>
+        <button class="btn-ghost" onclick="closeModal('memberModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Namn *</label>
+          <input type="text" id="memberName" placeholder="Fullstandigt namn">
+        </div>
+        <div class="form-group">
+          <label>E-post</label>
+          <input type="email" id="memberEmail" placeholder="namn@example.com">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Titel</label>
+            <input type="text" id="memberTitle" placeholder="t.ex. VD, Ordforande">
+          </div>
+          <div class="form-group">
+            <label>Roll</label>
+            <select id="memberRole">
+              <option value="member">Medlem</option>
+              <option value="chairman">Ordforande</option>
+              <option value="vice_chairman">Vice ordforande</option>
+              <option value="secretary">Sekreterare</option>
+              <option value="treasurer">Kassor</option>
+              <option value="auditor">Revisor</option>
+              <option value="alternate">Suppleant</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('memberModal')">Avbryt</button>
+        <button class="btn btn-primary" id="memberSaveBtn" onclick="saveMember()">Spara</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meeting Modal -->
+  <div class="modal-overlay" id="meetingModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Nytt mote</h3>
+        <button class="btn-ghost" onclick="closeModal('meetingModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Titel *</label>
+          <input type="text" id="meetingTitle" placeholder="t.ex. Styrelsemote #4">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Motestyp</label>
+            <select id="meetingType">
+              <option value="board">Styrelsemote</option>
+              <option value="annual">Arsmote</option>
+              <option value="inaugural">Konstituerande mote</option>
+              <option value="extra">Extra mote</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mall</label>
+            <select id="meetingTemplate"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Datum *</label>
+            <input type="date" id="meetingDate">
+          </div>
+          <div class="form-group">
+            <label>Tid</label>
+            <input type="time" id="meetingTime">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Plats</label>
+          <input type="text" id="meetingLocation" placeholder="Kontoret, Digitalt via Zoom, etc.">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('meetingModal')">Avbryt</button>
+        <button class="btn btn-primary" onclick="saveMeeting()">Skapa mote</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Modal -->
+  <div class="modal-overlay" id="aiModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><span class="ai-badge">AI</span> Textassistent</h3>
+        <button class="btn-ghost" onclick="closeModal('aiModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Ange text att formatera till protokollsprak</label>
+          <textarea id="aiInput" rows="4" placeholder="Skriv vanlig text sa formaterar AI den till korrekt protokollsprak..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Typ</label>
+          <select id="aiType">
+            <option value="format">Formatera till protokollsprak</option>
+            <option value="decision">Foreslá beslut</option>
+            <option value="summary">Sammanfatta</option>
+          </select>
+        </div>
+        <div id="aiResult" style="display:none">
+          <label style="font-size:13px;font-weight:500;margin-bottom:6px;display:block">Resultat:</label>
+          <div style="background:var(--border-light);border-radius:var(--radius);padding:12px;font-size:14px;white-space:pre-wrap" id="aiResultText"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('aiModal')">Stang</button>
+        <button class="btn btn-outline" id="aiCopyBtn" style="display:none" onclick="copyAiResult()">Kopiera</button>
+        <button class="ai-btn" id="aiGenerateBtn" onclick="generateAiText()">Generera</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h3 id="confirmTitle">Bekrafta</h3>
+        <button class="btn-ghost" onclick="closeModal('confirmModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmText"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('confirmModal')">Avbryt</button>
+        <button class="btn btn-danger" id="confirmBtn">Ta bort</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
