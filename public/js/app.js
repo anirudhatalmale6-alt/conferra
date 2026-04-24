@@ -412,10 +412,11 @@ async function loadDashboard() {
   document.getElementById('contentHeader').innerHTML = '<h2>Oversikt</h2>';
   document.getElementById('contentBody').innerHTML = '<div class="spinner spinner-dark"></div>';
   try {
-    const [orgs, meetings] = await Promise.all([
+    const [orgsData, meetings] = await Promise.all([
       api('/organizations'),
       api('/meetings/recent')
     ]);
+    const orgs = orgsData.organizations || orgsData;
     const orgCount = orgs.length || 0;
     const meetingCount = meetings.length || 0;
     const signed = meetings.filter(m => m.status === 'signed').length;
@@ -483,7 +484,8 @@ async function loadOrganizations() {
   `;
   document.getElementById('contentBody').innerHTML = '<div class="spinner spinner-dark"></div>';
   try {
-    const orgs = await api('/organizations');
+    const data = await api('/organizations');
+    const orgs = data.organizations || data;
     if (orgs.length === 0) {
       document.getElementById('contentBody').innerHTML = `
         <div class="empty-state">
@@ -562,11 +564,14 @@ async function saveOrg() {
 async function openOrg(id) {
   document.getElementById('contentBody').innerHTML = '<div class="spinner spinner-dark"></div>';
   try {
-    const [org, members, meetings] = await Promise.all([
+    const [orgData, membersData, meetingsData] = await Promise.all([
       api('/organizations/' + id),
       api('/organizations/' + id + '/members'),
       api('/organizations/' + id + '/meetings')
     ]);
+    const org = orgData.organization || orgData;
+    const members = membersData.members || membersData;
+    const meetings = meetingsData.meetings || meetingsData;
     currentOrg = org;
 
     document.getElementById('contentHeader').innerHTML = `
@@ -782,7 +787,8 @@ async function loadAllMeetings() {
 
 async function showMeetingModal() {
   try {
-    templates = await api('/templates');
+    const td = await api('/templates');
+    templates = td.templates || td;
   } catch { templates = []; }
   const sel = document.getElementById('meetingTemplate');
   sel.innerHTML = templates.map(t => `<option value="${t.id}" ${t.is_default ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
@@ -805,7 +811,8 @@ async function saveMeeting() {
   };
   if (!body.title || !body.meeting_date) return toast('Fyll i titel och datum', 'error');
   try {
-    const m = await api('/organizations/' + currentOrg.id + '/meetings', { method: 'POST', body });
+    const resp = await api('/organizations/' + currentOrg.id + '/meetings', { method: 'POST', body });
+    const m = resp.meeting || resp;
     closeModal('meetingModal');
     toast('Mote skapat!', 'success');
     openMeeting(m.id);
@@ -818,7 +825,12 @@ async function saveMeeting() {
 async function openMeeting(id) {
   document.getElementById('contentBody').innerHTML = '<div class="spinner spinner-dark"></div>';
   try {
-    const m = await api('/meetings/' + id);
+    const data = await api('/meetings/' + id);
+    const m = data.meeting || data;
+    if (data.attendees) m.attendees = data.attendees;
+    if (data.agendaItems) m.agenda_items = data.agendaItems;
+    if (data.signatures) m.signatures = data.signatures;
+    if (data.organization) currentOrg = data.organization;
     currentMeeting = m;
     currentOrg = currentOrg || { id: m.org_id };
 
@@ -1067,7 +1079,8 @@ async function showAddAttendeeDropdown(meetingId) {
   if (area.innerHTML) { area.innerHTML = ''; return; }
   let members = [];
   try {
-    members = await api('/organizations/' + currentMeeting.org_id + '/members');
+    const md = await api('/organizations/' + currentMeeting.org_id + '/members');
+    members = md.members || md;
   } catch { members = []; }
   area.innerHTML = `
     <div style="border:1px solid var(--border);border-radius:var(--radius);padding:8px;margin-bottom:12px">
@@ -1238,7 +1251,8 @@ async function loadTemplates() {
   document.getElementById('contentHeader').innerHTML = '<h2>Mallar</h2>';
   document.getElementById('contentBody').innerHTML = '<div class="spinner spinner-dark"></div>';
   try {
-    templates = await api('/templates');
+    const tmplData = await api('/templates');
+    templates = tmplData.templates || tmplData;
     document.getElementById('contentBody').innerHTML = `
       <div class="org-grid">
         ${templates.map(t => {
@@ -1349,7 +1363,8 @@ async function loadAdminUsers() {
   document.getElementById('contentHeader').innerHTML = '<h2>Anvandare</h2>';
   document.getElementById('contentBody').innerHTML = '<div class="spinner spinner-dark"></div>';
   try {
-    const users = await api('/admin/users');
+    const usersData = await api('/admin/users');
+    const users = usersData.users || usersData;
     document.getElementById('contentBody').innerHTML = `
       <div class="card">
         <div class="card-body">

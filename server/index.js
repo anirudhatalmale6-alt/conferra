@@ -500,6 +500,24 @@ router.post('/api/organizations/:orgId/meetings', auth, (req, res) => {
   }
 });
 
+// GET /api/meetings/recent
+router.get('/api/meetings/recent', auth, (req, res) => {
+  try {
+    const meetings = db.prepare(`
+      SELECT m.*, o.name as org_name
+      FROM meetings m
+      JOIN organizations o ON o.id = m.org_id
+      WHERE o.owner_id = ?
+      ORDER BY m.created_at DESC
+      LIMIT 20
+    `).all(req.user.id);
+    res.json(meetings);
+  } catch (err) {
+    console.error('[meetings recent]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/meetings/:id
 router.get('/api/meetings/:id', auth, (req, res) => {
   try {
@@ -1537,7 +1555,7 @@ router.get('/api/meetings/:id/pdf', auth, async (req, res) => {
 // GET /api/templates
 router.get('/api/templates', auth, (req, res) => {
   try {
-    const templates = db.prepare('SELECT id, name, description, type, is_default, created_at FROM templates ORDER BY is_default DESC, name').all();
+    const templates = db.prepare('SELECT * FROM templates ORDER BY is_default DESC, name').all();
     res.json({ templates });
   } catch (err) {
     console.error('[templates list]', err);
