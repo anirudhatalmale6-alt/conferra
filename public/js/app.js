@@ -127,7 +127,7 @@ function showLanding() {
   document.getElementById('app').innerHTML = `
     <div class="landing-page">
       <div class="landing-hero">
-        <h1>Conferra</h1>
+        <h1>Novadraft</h1>
         <p>Professionella styrelseprotokoll pa nagra minuter. AI-assisterad skrivhjalp, digital signering och PDF-export enligt svensk standard.</p>
         <button class="btn btn-primary btn-lg" onclick="showAuth()">Kom igang gratis</button>
         <button class="btn btn-outline btn-lg" style="color:#fff;border-color:rgba(255,255,255,.3);margin-left:8px" onclick="showAuth('login')">Logga in</button>
@@ -208,7 +208,7 @@ function showLanding() {
         </div>
       </div>
       <div class="landing-footer">
-        &copy; 2026 Conferra. Protokoll for moderna styrelser.
+        &copy; 2026 Novadraft. Protokoll for moderna styrelser.
       </div>
     </div>
   `;
@@ -232,7 +232,7 @@ function showAuth(tab = 'register') {
     <div class="auth-page">
       <div class="auth-container">
         <div class="auth-logo">
-          <h1>Conferra</h1>
+          <h1>Novadraft</h1>
           <p>Styrelseprotokoll pa ett smartare satt</p>
         </div>
         <div class="auth-tabs">
@@ -292,7 +292,7 @@ function showApp() {
     <div class="app-layout">
       <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-          <h1>Conferra</h1>
+          <h1>Novadraft</h1>
           <p>Protokollhantering</p>
         </div>
         <div class="sidebar-nav">
@@ -1257,11 +1257,12 @@ async function loadTemplates() {
       <div class="org-grid">
         ${templates.map(t => {
           let sections = [];
-          try { sections = JSON.parse(t.content).sections || []; } catch {}
+          try { sections = (typeof t.content === 'string' ? JSON.parse(t.content) : t.content).sections || []; } catch {}
+          const typeLabel = { board: 'Styrelsemote', annual: 'Arsmote', inaugural: 'Konstituerande', extra: 'Extra', protokoll: 'Protokoll' }[t.type] || t.type;
           return `
-            <div class="org-card" style="cursor:default">
+            <div class="org-card" onclick="viewTemplate('${t.id}')" style="cursor:pointer">
               <div class="org-card-header">
-                <div class="org-logo">${t.is_default ? 'S' : 'M'}</div>
+                <div class="org-logo">${t.name.charAt(0).toUpperCase()}</div>
                 <div class="org-card-info">
                   <h3>${esc(t.name)}</h3>
                   <p>${esc(t.description || '')}</p>
@@ -1269,11 +1270,70 @@ async function loadTemplates() {
               </div>
               <div class="org-card-meta">
                 <span>${sections.length} sektioner</span>
+                <span class="badge">${esc(typeLabel)}</span>
                 ${t.is_default ? '<span class="badge badge-active">Standard</span>' : ''}
               </div>
             </div>
           `;
         }).join('')}
+      </div>
+    `;
+  } catch (e) {
+    document.getElementById('contentBody').innerHTML = `<p>Fel: ${esc(e.message)}</p>`;
+  }
+}
+
+async function viewTemplate(templateId) {
+  document.getElementById('contentBody').innerHTML = '<div class="spinner spinner-dark"></div>';
+  try {
+    const data = await api('/templates/' + templateId);
+    const t = data.template;
+    const content = typeof t.content === 'string' ? JSON.parse(t.content) : t.content;
+    const sections = content.sections || [];
+    document.getElementById('contentHeader').innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn btn-outline" onclick="loadTemplates()" style="padding:6px 10px">&larr;</button>
+        <h2>${esc(t.name)}</h2>
+        ${t.is_default ? '<span class="badge badge-active">Standard</span>' : ''}
+      </div>
+    `;
+    document.getElementById('contentBody').innerHTML = `
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-body">
+          <p style="color:var(--text-light);margin-bottom:8px">${esc(t.description || '')}</p>
+          <div style="display:flex;gap:16px;font-size:13px;color:var(--text-light)">
+            <span>Typ: <strong>${esc(t.type || 'protokoll')}</strong></span>
+            <span>Sektioner: <strong>${sections.length}</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Sektioner i mallen</h3></div>
+        <div class="card-body" style="padding:0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Rubrik</th>
+                <th>Nyckel</th>
+                <th>Standardtext</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sections.map((s, i) => `
+                <tr>
+                  <td style="color:var(--text-light)">${i + 1}</td>
+                  <td><strong>${esc(s.title)}</strong></td>
+                  <td><code style="background:var(--border-light);padding:2px 6px;border-radius:4px;font-size:12px">${esc(s.key)}</code></td>
+                  <td style="color:var(--text-light);font-size:13px">${s.default_text ? esc(s.default_text) : '<em style="opacity:0.5">Ingen standardtext</em>'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:16px;background:var(--bg-light);border-radius:var(--radius);font-size:13px;color:var(--text-light)">
+        Denna mall anvands nar du skapar ett nytt mote och valjer den i malllistan. Sektionerna laggs automatiskt till som dagordningspunkter.
       </div>
     `;
   } catch (e) {
