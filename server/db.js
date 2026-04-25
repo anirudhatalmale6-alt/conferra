@@ -5,7 +5,7 @@ const { v4: uuid } = require('uuid');
 const fs = require('fs');
 
 const DATA_PATH = process.env.DATA_PATH || path.join(__dirname, '..', 'data');
-const dbPath = path.join(DATA_PATH, 'conferra.db');
+const dbPath = path.join(DATA_PATH, 'novadraft.db');
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 const db = new Database(dbPath);
@@ -144,15 +144,56 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS date_proposals (
+    id TEXT PRIMARY KEY,
+    meeting_id TEXT NOT NULL,
+    proposed_date TEXT NOT NULL,
+    proposed_time TEXT,
+    location TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS proposal_votes (
+    id TEXT PRIMARY KEY,
+    proposal_id TEXT NOT NULL,
+    voter_token TEXT NOT NULL,
+    voter_name TEXT NOT NULL,
+    available INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (proposal_id) REFERENCES date_proposals(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS voting_tokens (
+    id TEXT PRIMARY KEY,
+    meeting_id TEXT NOT NULL,
+    member_id TEXT,
+    name TEXT NOT NULL,
+    email TEXT,
+    token TEXT UNIQUE NOT NULL,
+    token_expires DATETIME,
+    voted INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
+  );
 `);
+
+// Migrations
+try { db.exec('ALTER TABLE meetings ADD COLUMN zoom_link TEXT'); } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN category TEXT DEFAULT "user"'); } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT'); } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN subscription_id TEXT'); } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN subscription_status TEXT'); } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN subscription_end TEXT'); } catch {}
 
 // Seed admin
 const userCount = db.prepare('SELECT COUNT(*) as cnt FROM users').get().cnt;
 if (userCount === 0) {
   const id = uuid();
   const hash = bcrypt.hashSync('Admin2026!', 10);
-  db.prepare('INSERT INTO users (id, email, password, name, role, plan) VALUES (?, ?, ?, ?, ?, ?)').run(id, 'admin@conferra.se', hash, 'Admin', 'admin', 'premium');
-  console.log('[DB] Default admin created: admin@conferra.se / Admin2026!');
+  db.prepare('INSERT INTO users (id, email, password, name, role, plan) VALUES (?, ?, ?, ?, ?, ?)').run(id, 'admin@novadraft.se', hash, 'Admin', 'admin', 'premium');
+  console.log('[DB] Default admin created');
 }
 
 // Seed default templates
